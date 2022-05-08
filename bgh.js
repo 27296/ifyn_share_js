@@ -57,8 +57,8 @@ async function tips(ckArr) {
         myaccount=ckArr[index].split("@")[0];
         authorization = ckArr[index].split("@")[1];
         clientauthorization = ckArr[index].split("@")[2];
-        headers.authorization = authorization;
-        headers.clientauthorization = clientauthorization;
+        headers.authorization ="Bearer "+ authorization;
+        headers.clientauthorization ="Bearer "+clientauthorization;
         msg += `账号[${num}]: ${myaccount}` + "\n"
         debugLog(`【debug】 这是你第 ${num} 账号信息:\n ${myaccount}`);
         await dotask();
