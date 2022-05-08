@@ -46,7 +46,7 @@ async function tips(ckArr) {
 }
 
 !(async () => {
-    let ckArr = await getCks(ckStr, "DFBZ_DATA");
+    let ckArr = await getCks(ckStr, "BGH_DATA");
 
     await tips(ckArr);
 
