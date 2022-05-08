@@ -53,9 +53,9 @@ async function tips(ckArr) {
     for (let index = 0; index < ckArr.length; index++) {
         let num = index + 1;
         console.log(`\n========= 开始【第 ${num} 个账号】=========\n`);
-
-        authorization = ckArr[index].split("@")[0];
-        clientauthorization = ckArr[index].split("@")[1];
+        myaccount=ckArr[index].split("@")[0];
+        authorization = ckArr[index].split("@")[1];
+        clientauthorization = ckArr[index].split("@")[2];
         headers.authorization = authorization;
         headers.clientauthorization = clientauthorization;
         msg += `账号[${num}]: ${myaccount}` + "\n"
@@ -199,15 +199,8 @@ function bzhttp(url) {
         try {
             axios = require("axios")
             var errinfo = {
-                "code": -1
+                "success": -1
             }
-            if (url.url == "https://gateway-sapp.dpca.com.cn/api-u/v1/user/auth/loginForPwd") {
-                delete headers.Authorization;
-            }
-            var TimeStamp = new Date().getTime();
-            headers.TimeStamp = TimeStamp;
-            var 明文 = TimeStamp + headers.AppId + headers.Secret;
-            headers.Sign = encrypt.sha256(明文);
 
             if (url.method == "get") res = await axios.get(url.url, {
                 headers: url.headers
