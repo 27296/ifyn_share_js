@@ -8,7 +8,7 @@ var errinfo = {
 }
 const debug = 0 //0为关闭调试，1为打开调试,默认为0
 let path = "BGH_DATA";
-let ckStr = process.env.path;
+let ckStr = process.env[path]
 let version = 0.1
 
 
