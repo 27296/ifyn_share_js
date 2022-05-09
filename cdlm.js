@@ -106,14 +106,9 @@ async function total() {
     if (task.code == 0) {
         console.log("🔔登录:成功");
         msg += "🔔登录:成功" + "\n"
-        if (task.data.baseData.sign.todayCount != 1) {
-            $.dottedLine("签到");
+        
+         $.dottedLine("签到");
             await dotask(7);
-        } else {
-            $.dottedLine("签到");
-            console.log("🔔签到:已完成");
-            msg += "🔔签到:已完成" + "\n"
-        }
         if (task.data.baseData.share.todayCount != 2) {
             $.dottedLine("转发");
             await dotask(5);
