@@ -1,3 +1,5 @@
+"nodejs";
+
 const title = "广汽传祺"
 const $ = new Env(title);
 const debug = 0 //0为关闭调试，1为打开调试,默认为0
@@ -99,7 +101,7 @@ async function tips(ckArr) {
 async function encrypt() {
     headers.reqNonc = randomString_(6);
     headers.reqTs = new Date().getTime();
-    var reqSign明文 = "signature" + headers.reqNonc + headers.reqTs + "17aaf8118ffb270b766c6d6774317a133.3.2";
+    var reqSign明文 = "signature" + headers.reqNonc + headers.reqTs + "17aaf8118ffb270b766c6d6774317a133.5.1";
     headers.reqSign = module.exports.md5(reqSign明文);
     headers.imei = 86 + randomString_(13);
     headers.imsi = randomString_(15);
