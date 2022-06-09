@@ -2,30 +2,32 @@
 
 const title = "捷途"
 const $ = new Env(title);
-msg = ""
+msg = "";
 var errinfo = {
     resultCode: -1
 }
 const debug = 0 //0为关闭调试，1为打开调试,默认为0
 let path = "JT_DATA";
 let ckStr = process.env[path];
+
 let version = 0.1
 
 
 
 
-//账号@密码   如果有微信  则  账户@密码@微信tokken
+
+
+//账号@密码   如果有微信  则  账户@密码@微信token
 
 
 
 const headers = {
-    "Host": "app.jetour.com.cn",
-    "accept-language": "zh-cn",
-    "agent": "Jetour/2.9.0 Dalvik/2.1.0 (Linux; U; Android 10; IN2020 Build/QKQ1.191222.002)",
-    "sign": "",
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NTk5Nzc0MzQsInVzZXIiOiJ7XCJwaG9uZVwiOlwiMTc2MDg1NDcwMzJcIixcInVzZXJJZFwiOlwiNDg1ZmU2MTZkY2IzNDdlNGFjZDBlN2VmOTNlZjNmY2FcIixcInVzZXJuYW1lXCI6XCLosKLnibnniblcIn0iLCJ1c2VyX25hbWUiOiLosKLnibnnibkiLCJqdGkiOiJlOGY4MjdlOC1lNDMxLTRkYzYtYTczZi04MjZjOGZmNjcxYmEiLCJjbGllbnRfaWQiOiJhbmRyb2lkIiwic2NvcGUiOlsiYWxsIl19.ZMOZUm7R_NAP_y4Uh0NMJe5fbbmr_NZDVP_-iVI4sx8",
-    "content-type": "application/x-www-form-urlencoded",
-    "user-agent": "okhttp/3.14.7",
+    "user-agent": "Dart/2.15 (dart:io)",
+    "accept": "application/json, text/plain, */*",
+    "accept-language": "zh-CN,zh;q=0.9",
+    "host": "uaa-consumer.jetour.com.cn",
+    "content-type": "application/json; charset=UTF-8",
+    "agent": "android",
 }
 
 
@@ -56,6 +58,7 @@ async function tips(ckArr, version) {
     console.log(`\n=================== 共找到 ${ckArr.length} 个账号 ===================`);
     $.debugLog(`【debug】 这是你的账号数组:\n ${ckArr}`);
 }
+
 
 
 
@@ -98,6 +101,7 @@ async function tips(ckArr, version) {
 
 
 async function start() {
+    headers.host="mobile-consumer.jetour.com.cn"
     $.dottedLine("签到")
     await signin();
     if (wxtoken) {
@@ -110,6 +114,9 @@ async function start() {
     }
     $.dottedLine("分享")
     await share();
+    $.dottedLine("浏览")
+    await view();
+    await view2();
     $.dottedLine("积分")
     await integral();
 }
@@ -141,43 +148,168 @@ async function wxsignin() {
 
 async function login(myaccount, pwd) {
     $.dottedLine("登录")
-    var time = new Date().getTime();
-    var 明文 = `cfc653b2a176349f${pwd}${myaccount}94c8f8cd7196dee00e7e531ddd86c757${time}`
-    var sign = await $.sha256(明文);
-    headers.sign = sign;
-    var data = `username=${myaccount}&password=${pwd}&did=cfc653b2a176349f`
+    data = {
+        "algorithm": "aes",
+        "username": myaccount,
+        "terminal": 3
+    }
     let url = {
-        url: `https://app.jetour.com.cn/jaccount/login?timestamp=${time}`,
+        url: `https://uaa-consumer.jetour.com.cn/api/v1/common/secret?access_token=&terminal=3`,
         headers: headers,
-        body: data,
+        body: JSON.stringify(data),
         timeout: 5 * 1000
     }
     let 登录 = await $.post(url, `登录`)
-    if ($.safeGet(登录) || $.isobject(登录)) {
-        delete headers.sign;
-        headers.token = 登录.token;
-        msg += "🔔登录:成功" + "    \n\n";
-        console.log("🔔登录:成功");
-        await start()
-    } else {
-        console.log("🔔" + JSON.stringify(登录))
+    if (登录.status == 200) {
+        key = 登录.data.random;
+        iv = 登录.data.iv;
+        userid = 登录.data.openId;
+        pwd = $.AesEncrypt(key, iv, pwd + "|" + key)
+        await Login(myaccount, pwd)
     }
 }
 
 
 
-async function signin() {
 
+async function Login(a, b) {
+    data = {
+        "username": a,
+        "password": b,
+        "client_id": "bigapp",
+        "source": 2,
+        "terminal": 3
+    }
     let url = {
-        url: "https://app.jetour.com.cn/api/user/checkin",
+        url: 'https://uaa-consumer.jetour.com.cn/api/v1/uaa/mobile/token/secret?access_token=&terminal=3',
         headers: headers,
-        body: "",
+        body: JSON.stringify(data),
+        timeout: 5 * 1000
+    }
+    let 登录 = await $.post(url, `登录`)
+    if (登录.status == 200) {
+        msg += "🔔登录:成功" + "    \n\n";
+        console.log("🔔登录:成功");
+        accessToken = 登录.data.accessToken;
+        userid = 登录.data.openId;
+        await start()
+    } else {
+        console.log(登录)
+    }
+}
+
+
+async function share() {
+    data = {
+        "eventCode": "SJ50005",
+        "properties": {
+            "share_user_id": userid,
+            "share_user_name": "",
+            "share_time": new Date().getTime(),
+            "share_content_type": "动态",
+            "share_channel": "微信好友"
+        },
+        "terminal": 3
+    }
+    let url = {
+        url: "https://mobile-consumer.jetour.com.cn/web/event/event-instances?access_token=" + accessToken + "&terminal=3",
+        headers: headers,
+        body: JSON.stringify(data),
+        timeout: 5 * 1000
+    }
+    let 分享 = await $.post(url, `分享`)
+    if (分享.status == 200) {
+        msg += "🔔分享:成功" + "    \n\n";
+        console.log("🔔分享:成功");
+    } else {
+        console.log(分享)
+    }
+    let 分享2 = await $.post(url, `分享`)
+    if (分享2.status == 200) {
+        msg += "🔔分享:成功" + "    \n\n";
+        console.log("🔔分享:成功");
+    } else {
+        console.log(分享2)
+    }
+}
+
+
+
+
+async function view() {
+    data = {
+        "eventCode": "SJ50006",
+        "properties": {
+            "content_user_id": "1525576219696824320",
+            "content_user_name": "捷途就是牛",
+            "content_id": "2313440565842174312",
+            "content_title": "#节油达人#分享一下八大省油小技巧",
+            "content_view_time": new Date().getTime(),
+            "content_duration": 18
+        },
+        "terminal": 3
+    }
+    let url = {
+        url: "https://mobile-consumer.jetour.com.cn/web/event/event-instances?access_token=" + accessToken + "&terminal=3",
+        headers: headers,
+        body: JSON.stringify(data),
+        timeout: 5 * 1000
+    }
+    let 浏览 = await $.post(url, `浏览`)
+    if (浏览.status == 200) {
+        msg += "🔔浏览:成功" + "    \n\n";
+        console.log("🔔浏览:成功");
+    } else {
+        console.log(浏览)
+    }
+}
+
+async function view2() {
+    data={
+  "eventCode": "SJ50006",
+  "properties": {
+    "content_user_id": "3546969435531247662",
+    "content_user_name": "牡丹配芍药",
+    "content_id": "2313457264675020819",
+    "content_title": "#你会出于什么原因购买大圣#捷途服务质量",
+    "content_view_time":new Date().getTime(),
+    "content_duration": 67
+  },
+  "terminal": 3
+}
+    let url = {
+        url: "https://mobile-consumer.jetour.com.cn/web/event/event-instances?access_token=" + accessToken + "&terminal=3",
+        headers: headers,
+        body: JSON.stringify(data),
+        timeout: 5 * 1000
+    }
+    let 浏览2 = await $.post(url, `浏览`)
+    if (浏览2.status == 200) {
+        msg += "🔔浏览:成功" + "    \n\n";
+        console.log("🔔浏览:成功");
+    } else {
+        console.log(浏览2)
+    }
+}
+
+
+
+
+
+
+async function signin() {
+    let url = {
+        url: "https://mobile-consumer.jetour.com.cn/web/task/tasks/event-start?access_token=" + accessToken,
+        headers: headers,
+        body: {
+            "eventCode": "SJ50001"
+        },
         timeout: 5 * 1000
     }
     let sign = await $.post(url, `签到`)
-    if (sign.resultCode != -1) {
-        msg += "🔔签到成功:" + sign.credit + "    \n\n";
-        console.log("🔔签到成功:", sign.credit)
+    if (sign.status == 200) {
+        msg += "🔔签到成功" + "    \n\n";
+        console.log("🔔签到成功")
     } else {
         msg += "🔔签到失败:" + sign + "    \n\n";
 
@@ -190,103 +322,25 @@ async function signin() {
 
 
 
-async function share() {
-    delete headers.sign;
-    let url = {
-        url: "https://app.jetour.com.cn/api/posts/news?lastPostId=&size=20&type=2",
-        headers: headers,
-        timeout: 5 * 1000
-    }
-    let 列表 = await $.get(url, `列表`)
-    if ($.safeGet(列表) || $.isobject(列表)) {
-        for (var i = 0; i < 5; i++) {
-            await 分享(列表[i].id);
-            await detail(列表[i].id);
-            await reply(列表[i].id)
-            await 浏览(列表[i].id);
-        }
-    }
-}
 
 
 
 
-
-async function 分享(postid) {
-
-    let url = {
-        url: `https://app.jetour.com.cn/api/posts/${postid}/share`,
-        headers: headers,
-        timeout: 5 * 1000
-    }
-    let 提交 = await $.get(url, `分享`)
-    if ($.safeGet(提交) || $.isobject(提交)) {
-        msg += "🔔分享:" + 提交.title + "    \n\n";
-
-        console.log("🔔分享:", 提交.title)
-    } else {
-        msg += "🔔分享:" + 提交 + "    \n\n";
-
-        console.log("分享", 提交)
-
-    }
-}
-
-
-async function 浏览(postid) {
-
-    let url = {
-        url: "https://app.jetour.com.cn/api/credit/browseAddCredit",
-        headers: headers,
-        body: `postId=${postid}`,
-        timeout: 5 * 1000
-    }
-    let 提交 = await $.put(url, `浏览`)
-    msg += "🔔浏览:成功" +"    \n\n";
-
-    console.log("🔔浏览:成功", 提交)
-
-}
-
-
-
-
-async function detail(postid) {
-    let url = {
-        url: `https://app.jetour.com.cn/api/posts/${postid}/detail`,
-        headers: headers,
-        timeout: 1 * 1000
-    }
-    let 积分 = await $.get(url, "积分")
-
-}
-
-
-
-async function reply(postid) {
-    let url = {
-        url: `https://app.jetour.com.cn/api/posts/${postid}/replies/page?replyId=0&size=20`,
-        headers: headers,
-        timeout: 1 * 1000
-    }
-    let 积分 = await $.get(url, "积分")
-
-}
 
 
 
 async function integral() {
 
     let url = {
-        url: "https://app.jetour.com.cn/api/user/creditV2",
+        url:"https://mobile-consumer.jetour.com.cn/web/point/consumer/detail?access_token="+accessToken,
         headers: headers,
         timeout: 5 * 1000
     }
     let 积分 = await $.get(url, "积分")
 
-    if ($.safeGet(积分) || $.isobject(积分)) {
-        msg += "🔔总积分:" + 积分.credit + "    \n\n";
-        console.log("🔔总积分:", 积分.credit)
+    if (积分.status==200) {
+        msg += "🔔总积分:" + 积分.data.payableBalance + "    \n\n";
+        console.log("🔔总积分:", 积分.data.payableBalance)
     }
 }
 
@@ -302,7 +356,7 @@ async function integral() {
 async function wyy() {
     let url = {
         url: `https://keai.icu/apiwyy/api`,
-        timeout: 5 * 1000
+        timeout: 1 * 1000
     }
     await $.get(url, "网易云")
         .then(function(response) {
@@ -401,7 +455,7 @@ function Env(t, e) {
             return new Promise(async (resolve) => {
                 if (debug) {
                     $.log(`\n 【debug】=============== 这是 ${e} 请求 url ===============`);
-                    $.log(t.url);
+                    $.log(JSON.stringify(t));
                 }
                 await $.wait(t.timeout);
                 await axios.post(t.url, t.body, {
@@ -422,6 +476,7 @@ function Env(t, e) {
                         resolve(response.data);
                     }
                 }).catch(function(error) {
+                    console.log("发现错误:",error.message)
                     resolve(errinfo);
                 })
             })
@@ -507,6 +562,19 @@ function Env(t, e) {
         dottedLine(t) {
             msg += `\n========= ${t} =========\n`;
             console.log(`\n========= ${t} =========\n`);
+        }
+        AesEncrypt(key, iv, data) {
+            const crypto = require("crypto");
+            var clearEncoding = 'utf8';
+            var cipherEncoding = 'base64';
+            var cipherChunks = [];
+            var cipher = crypto.createCipheriv('aes-128-cbc', key, iv);
+            cipher.setAutoPadding(true);
+
+            cipherChunks.push(cipher.update(data, clearEncoding, cipherEncoding));
+            cipherChunks.push(cipher.final(cipherEncoding));
+
+            return cipherChunks.join('');
         }
         getCks(t, e) {
             return new Promise((resolve, reject) => {
