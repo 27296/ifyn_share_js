@@ -17,7 +17,7 @@ let version = 0.1
 
 
 
-//账号@密码   如果有微信  则  账户@密码@微信token
+//账号@密码   如果有微信  则  账户@密码@微信tokken
 
 
 
@@ -147,6 +147,7 @@ async function wxsignin() {
 
 
 async function login(myaccount, pwd) {
+    headers.host="uaa-consumer.jetour.com.cn";
     $.dottedLine("登录")
     data = {
         "algorithm": "aes",
